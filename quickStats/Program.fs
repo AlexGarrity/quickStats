@@ -3,14 +3,17 @@
 // See the 'F# Tutorial' project for more help.
 
 open System
-open quickStats.conn
+open quickStats.SqlConn
+open quickStats.Files
 
 
 
 [<EntryPoint>]
 let main argv = 
-    printConnections
-    let d = getConnections()
-    printfn "%d" (Seq.length d)
-    testConnections
+    //printConnections
+    match executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript with//loadSQLScript with
+    | Some a -> a |> printQueries
+    | _ -> printfn "no results returned"
+
+
     0 // return an integer exit code
