@@ -8,7 +8,10 @@ open FSharp.Configuration
         open System.Data
         open System.Data.SqlClient
         open System.Collections.Generic
-
+        
+        type queryResult = {headers:string list; rows:string list list}
+        
+        
         ///<summary>load all connections from app.config</summary>
         ///<returns>Sequence of all connections listed in the app.config</returns>
         let getConnections() = 
@@ -17,11 +20,11 @@ open FSharp.Configuration
                     | "" -> None
                     | x -> Some conn}
             |> Seq.choose id
-        let ListToString (l:string list) = 
-            let mutable s = ""
-            l |> Seq.iter (fun f -> s <- s + " " + f )
-            s
-        type queryResult = {headers:string list; rows:string list list}
+        //let ListToString (l:string list) = 
+        //    let mutable s = ""
+        //    l |> Seq.iter (fun f -> s <- s + " " + f )
+        //    s
+        
 
         let rec printQueryRows rows = 
             match rows with
@@ -59,22 +62,23 @@ open FSharp.Configuration
             | false -> rows
             | true -> getAllResultRowsForQuery ((getResultRow [] reader 0)::rows) reader
 
-        let rec processAllQueries (reader:SqlDataReader) = 
-            let mutable hasMore = true
-            let mutable queries = []
-            while hasMore do
+        let rec processAllQueries queries (reader:SqlDataReader) hasMore = 
             
-                    let qr = { headers = getQueryHeaders [] reader 0;
-                               rows = (getAllResultRowsForQuery [] reader) }
+            match hasMore with
+            | false -> 
+                 match queries with 
+                    | [] -> None
+                    | q -> Some q
+            | true -> 
+                let qr = { headers = getQueryHeaders [] reader 0;
+                           rows = (getAllResultRowsForQuery [] reader) }
                     
-                    match qr.headers with
-                        | [] -> ()
-                        | a -> queries <- qr::queries
-                    hasMore <- reader.NextResult()
+                processAllQueries (match qr.headers with
+                                    | [] -> queries
+                                    | a -> qr::queries) reader (reader.NextResult())
+            
       
-            match queries with 
-            | [] -> None
-            | q -> Some q
+            
 
         ///<summary>Execute a sql script and return results as list of linked lists</summary>
         ///<param name="connectionString">The connection string which will be used</param>
@@ -90,7 +94,9 @@ open FSharp.Configuration
 
             sqlConnection.Open()
             let reader = cmd.ExecuteReader()
-            let queries = processAllQueries reader
+
+            let queries = processAllQueries [] reader true
+            
 
             reader.Dispose()
             reader.Close()
