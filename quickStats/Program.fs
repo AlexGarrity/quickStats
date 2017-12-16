@@ -10,8 +10,8 @@ open quickStats.Files
 
 [<EntryPoint>]
 let main argv = 
-    //printConnections
-    match executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript with//loadSQLScript with
+    
+    match executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript with
     | Some a -> a |> printQueries
     | _ -> printfn "no results returned"
 

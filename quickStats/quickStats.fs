@@ -9,17 +9,25 @@ open FSharp.Configuration
         open System.Data.SqlClient
         open System.Collections.Generic
         
-        type queryResult = {headers:string list; rows:string list list}
+        
+        type ColumnHeader = ColumnHeader of string
+        type RowCell = RowCell of string
+        type ResultRow = ResultRow of RowCell list
+        type QueryHeaders = QueryHeaders of ColumnHeader list
+        
+        type queryResults = {headers:QueryHeaders; rows:ResultRow list}
         
         
         ///<summary>load all connections from app.config</summary>
         ///<returns>Sequence of all connections listed in the app.config</returns>
-        let getConnections() = 
-            seq { for conn in ConfigurationManager.ConnectionStrings -> 
-                    match conn.ConnectionString with
-                    | "" -> None
-                    | x -> Some conn}
-            |> Seq.choose id
+        let getConnections = 
+            lazy
+                seq { for conn in ConfigurationManager.ConnectionStrings -> 
+                        match conn.ConnectionString with
+                        | "" -> None
+                        | x -> Some conn}
+                |> Seq.choose id
+            
         //let ListToString (l:string list) = 
         //    let mutable s = ""
         //    l |> Seq.iter (fun f -> s <- s + " " + f )
@@ -50,17 +58,17 @@ open FSharp.Configuration
             | false -> headers
             | true -> 
                 //printfn "count %i and index %i " (reader.FieldCount) i
-                getQueryHeaders ((reader.GetName(i))::headers) reader (i+1)
+                getQueryHeaders ( ColumnHeader( reader.GetName(i) )::headers) reader (i+1)
 
         let rec getResultRow columns (reader:SqlDataReader) i = 
             match i>=0 && reader.FieldCount > i with 
             | false -> columns
-            | true -> getResultRow ((reader.GetProviderSpecificValue(i).ToString())::columns) reader (i+1)
+            | true -> getResultRow (RowCell(reader.GetProviderSpecificValue(i).ToString())::columns) reader (i+1)
 
         let rec getAllResultRowsForQuery rows (reader:SqlDataReader)=
             match reader.Read() with
             | false -> rows
-            | true -> getAllResultRowsForQuery ((getResultRow [] reader 0)::rows) reader
+            | true -> getAllResultRowsForQuery (ResultRow(getResultRow [] reader 0)::rows) reader
 
         let rec processAllQueries queries (reader:SqlDataReader) hasMore = 
             
@@ -70,11 +78,11 @@ open FSharp.Configuration
                     | [] -> None
                     | q -> Some q
             | true -> 
-                let qr = { headers = getQueryHeaders [] reader 0;
+                let qr = { headers =QueryHeaders( getQueryHeaders [] reader 0 )
                            rows = (getAllResultRowsForQuery [] reader) }
                     
                 processAllQueries (match qr.headers with
-                                    | [] -> queries
+                                    | QueryHeaders([]) -> queries
                                     | a -> qr::queries) reader (reader.NextResult())
             
       
@@ -104,9 +112,10 @@ open FSharp.Configuration
             queries
 
         let printConnections = 
-            getConnections() 
-            |> Seq.iter (fun s-> printfn "%s" (s.ToString()) )   
-    
+            lazy
+                let conn = getConnections.Value
+                conn |> Seq.iter (fun s-> printfn "%s" (s.ToString()) )   
+            
 
     module Files = 
         open System.IO
@@ -114,6 +123,8 @@ open FSharp.Configuration
         let loadSQLScript = 
             File.ReadAllLines(AppSettings<"app.config">.SqlFilePathAndName)
             |> (fun s -> 
-                    printfn "%A" s
                     String.concat " " s)
+        
 
+
+            
