@@ -10,10 +10,24 @@ open FSharp.Configuration
         open System.Collections.Generic
         
         
-        type ColumnHeader = ColumnHeader of string
-        type RowCell = RowCell of string
-        type ResultRow = ResultRow of RowCell list
-        type QueryHeaders = QueryHeaders of ColumnHeader list
+
+        type Cell = 
+            |Cell of string
+            member this.getData = 
+                match this with
+                | Cell s -> s
+
+        type ResultRow = 
+            |ResultRow of Cell list
+            member this.getRow = 
+                match this with
+                | ResultRow r -> r
+                
+        type QueryHeaders = 
+            |QueryHeaders of Cell list
+            member this.getQueryHeaders =
+                match this with
+                | QueryHeaders q -> q
         
         type queryResults = {headers:QueryHeaders; rows:ResultRow list}
         
@@ -58,12 +72,12 @@ open FSharp.Configuration
             | false -> headers
             | true -> 
                 //printfn "count %i and index %i " (reader.FieldCount) i
-                getQueryHeaders ( ColumnHeader( reader.GetName(i) )::headers) reader (i+1)
+                getQueryHeaders ( Cell( reader.GetName(i) )::headers) reader (i+1)
 
         let rec getResultRow columns (reader:SqlDataReader) i = 
             match i>=0 && reader.FieldCount > i with 
             | false -> columns
-            | true -> getResultRow (RowCell(reader.GetProviderSpecificValue(i).ToString())::columns) reader (i+1)
+            | true -> getResultRow (Cell(reader.GetProviderSpecificValue(i).ToString())::columns) reader (i+1)
 
         let rec getAllResultRowsForQuery rows (reader:SqlDataReader)=
             match reader.Read() with
@@ -99,7 +113,7 @@ open FSharp.Configuration
             cmd.CommandText <- str         
             cmd.CommandType <- CommandType.Text
             cmd.Connection <- sqlConnection
-
+            cmd.CommandTimeout <- 300
             sqlConnection.Open()
             let reader = cmd.ExecuteReader()
 
@@ -125,6 +139,62 @@ open FSharp.Configuration
             |> (fun s -> 
                     String.concat " " s)
         
+    module CSVBuilder =
+        open SqlConn
+        let internal escapeSpecialCharacters (newCell:string) (strb:System.Text.StringBuilder) isFirstCell =
+            let shouldBeQuoted = newCell.Contains(",") 
+                                 || newCell.Contains("\r")
+                                 || newCell.Contains("\n")
+                                 || newCell.Contains("\"")
 
+            let processedCell = 
+                match newCell.Contains("\"") with
+                | true -> newCell.Replace("\"","\"\"")
+                | false -> newCell
+            
+            match isFirstCell with
+                | true -> ()
+                | false -> 
+                    strb.Append(",") |> ignore
+               
+            match shouldBeQuoted with
+                |true -> strb.Append("\"") |> ignore
+                         strb.Append(processedCell) |> ignore
+                         strb.Append("\"") |> ignore
+                |false -> strb.Append(processedCell) |> ignore
+            strb
+        
+        let rec internal buildCSVRowRecursively (list:Cell list) (strb:System.Text.StringBuilder) isFirstCell = 
+            match list with
+            | [] -> strb
+            | head::tail -> 
+                buildCSVRowRecursively tail 
+                            (escapeSpecialCharacters (head.getData) strb isFirstCell) 
+                            false
+        
+        let buildCSVrow (sqlRow:ResultRow) = 
+            let strb = System.Text.StringBuilder()
+            buildCSVRowRecursively sqlRow.getRow strb true |> ignore
+            strb.ToString()
+        
+        let buildCSVrowHeaders (headers:QueryHeaders) = 
+            let strb = System.Text.StringBuilder()
+            buildCSVRowRecursively headers.getQueryHeaders strb true |> ignore
+            strb.ToString()
 
+        let rec internal writeCSVRowsRecursively (wr:System.IO.StreamWriter) (rows:ResultRow list)=
+            match rows with
+            |[] -> ()
+            | head::tail -> 
+                wr.Write (buildCSVrow head)
+                wr.Write("\r\n")
+                writeCSVRowsRecursively wr tail
+
+        let generateCSVFile (queryResults:queryResults) = 
+            let wr = new System.IO.StreamWriter("C:\svn\Csv.csv")
+            wr.Write (buildCSVrowHeaders (queryResults.headers))
+            wr.Write("\r\n")
+            writeCSVRowsRecursively wr (List.rev (queryResults.rows))
+            wr.Close()
+            
             

@@ -5,6 +5,7 @@ open System
 open Xunit
 open quickStats.SqlConn
 open quickStats.Files
+open quickStats.CSVBuilder
 
 type testQuickStats() =
     let result (queries:'T list option) = 
@@ -46,6 +47,45 @@ type testQuickStats() =
     let ``test executeScript with no select statements``() =
         let queries =  executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test"""
         Assert.Equal(-1,(result queries))
-
+    
+    [<Fact>]
+    let ``test building CSV row with no special characters``() =
         
+        let a = Cell("a")
+        let b = Cell("b")
+        let c = Cell("c")
+        let row = ResultRow([a; b; c])
+        let result = buildCSVrow row 
+        Assert.Equal("a,b,c",result)
+    
+    [<Fact>]
+    let ``test building CSV row with comma and double quotes``() =
+        
+        let a = Cell("a\"")
+        let b = Cell("b,b")
+        let c = Cell("c")
+        let row = ResultRow([a; b; c])
+        let result = buildCSVrow row 
+        Assert.Equal("\"a\"\"\",\"b,b\",c",result)
+
+    [<Fact>]
+    let ``test building CSV row with all special characters``() =
+        let a = Cell("a\"")
+        let b = Cell("b,b")
+        let c = Cell("c\r")
+        let d = Cell("d\n\",")
+        let row = ResultRow([a; b; c; d])
+        let result = buildCSVrow row 
+        Assert.Equal("\"a\"\"\",\"b,b\",\"c\r\",\"d\n\"\",\"",result)
+
+    [<Fact>]
+    let ``test building CSV row with empty cells``() =
+        let a = Cell("")
+        let b = Cell("b,b")
+        let c = Cell("c")
+        let row = ResultRow([a; b; c])
+        let headers = QueryHeaders([a; a; a])
+        let result = buildCSVrow row 
+        let headersResult = buildCSVrowHeaders headers
+        Assert.Equal(",,",headersResult)
         

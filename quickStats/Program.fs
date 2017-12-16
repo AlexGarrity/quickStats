@@ -5,6 +5,7 @@
 open System
 open quickStats.SqlConn
 open quickStats.Files
+open quickStats.CSVBuilder
 
 
 
@@ -12,7 +13,11 @@ open quickStats.Files
 let main argv = 
     
     match executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript with
-    | Some a -> a |> printQueries
+    | Some a -> 
+        match a with
+        | head::tail -> generateCSVFile head
+        | _ -> printfn "results found"
+        //a |> printQueries
     | _ -> printfn "no results returned"
 
 
