@@ -29,7 +29,7 @@ open FSharp.Configuration
                 match this with
                 | QueryHeaders q -> q
         
-        type queryResults = {headers:QueryHeaders; rows:ResultRow list}
+        type queryResults = {clientName:string; headers:QueryHeaders; rows:ResultRow list}
         
         
         ///<summary>load all connections from app.config</summary>
@@ -42,12 +42,6 @@ open FSharp.Configuration
                         | x -> Some conn}
                 |> Seq.choose id
             
-        //let ListToString (l:string list) = 
-        //    let mutable s = ""
-        //    l |> Seq.iter (fun f -> s <- s + " " + f )
-        //    s
-        
-
         let rec printQueryRows rows = 
             match rows with
             | [] -> ()
@@ -84,7 +78,7 @@ open FSharp.Configuration
             | false -> rows
             | true -> getAllResultRowsForQuery (ResultRow(getResultRow [] reader 0)::rows) reader
 
-        let rec processAllQueries queries (reader:SqlDataReader) hasMore = 
+        let rec internal processAllQueries clientName queries (reader:SqlDataReader) hasMore = 
             
             match hasMore with
             | false -> 
@@ -92,21 +86,22 @@ open FSharp.Configuration
                     | [] -> None
                     | q -> Some q
             | true -> 
-                let qr = { headers =QueryHeaders( getQueryHeaders [] reader 0 )
+                let qr = { clientName=clientName
+                           headers =QueryHeaders( getQueryHeaders [] reader 0 )
                            rows = (getAllResultRowsForQuery [] reader) }
                     
-                processAllQueries (match qr.headers with
-                                    | QueryHeaders([]) -> queries
-                                    | a -> qr::queries) reader (reader.NextResult())
+                processAllQueries clientName (match qr.headers with
+                                             | QueryHeaders([]) -> queries
+                                             | a -> qr::queries) reader (reader.NextResult())
             
-      
+        
             
 
         ///<summary>Execute a sql script and return results as list of linked lists</summary>
         ///<param name="connectionString">The connection string which will be used</param>
         ///<param name="str">the sql script which will be executed using the specified connection string</param>
         ///<returns>Sequence of linked lists</returns>
-        let executeScript connectionString str = 
+        let executeScript clientName connectionString str = 
             let sqlConnection = new SqlConnection(connectionString);
             
             let cmd = new SqlCommand();
@@ -117,7 +112,7 @@ open FSharp.Configuration
             sqlConnection.Open()
             let reader = cmd.ExecuteReader()
 
-            let queries = processAllQueries [] reader true
+            let queries = processAllQueries clientName [] reader true
             
 
             reader.Dispose()
@@ -137,7 +132,7 @@ open FSharp.Configuration
         let loadSQLScript = 
             File.ReadAllLines(AppSettings<"app.config">.SqlFilePathAndName)
             |> (fun s -> 
-                    String.concat " " s)
+                    String.concat "\n" s)
         
     module CSVBuilder =
         open SqlConn
@@ -172,29 +167,41 @@ open FSharp.Configuration
                             (escapeSpecialCharacters (head.getData) strb isFirstCell) 
                             false
         
-        let buildCSVrow (sqlRow:ResultRow) = 
+        let buildCSVrow (clientName:Cell) (sqlRow:ResultRow) = 
             let strb = System.Text.StringBuilder()
-            buildCSVRowRecursively sqlRow.getRow strb true |> ignore
+            buildCSVRowRecursively (clientName::(List.rev sqlRow.getRow)) strb true |> ignore
             strb.ToString()
         
         let buildCSVrowHeaders (headers:QueryHeaders) = 
             let strb = System.Text.StringBuilder()
-            buildCSVRowRecursively headers.getQueryHeaders strb true |> ignore
+            buildCSVRowRecursively (Cell("client name")::(List.rev headers.getQueryHeaders)) strb true |> ignore
             strb.ToString()
 
-        let rec internal writeCSVRowsRecursively (wr:System.IO.StreamWriter) (rows:ResultRow list)=
+        let rec internal writeCSVRowsRecursively clientName (wr:System.IO.StreamWriter) (rows:ResultRow list)=
             match rows with
             |[] -> ()
             | head::tail -> 
-                wr.Write (buildCSVrow head)
+                wr.Write (buildCSVrow clientName head)
                 wr.Write("\r\n")
-                writeCSVRowsRecursively wr tail
-
-        let generateCSVFile (queryResults:queryResults) = 
-            let wr = new System.IO.StreamWriter("C:\svn\Csv.csv")
+                writeCSVRowsRecursively clientName wr tail
+        
+        ///Output query results to a CSV file
+        let generateCSVFile (queryResults:queryResults) (clientName:Cell) path fileName = 
+            let wr = new System.IO.StreamWriter(path + "\\" + fileName)
             wr.Write (buildCSVrowHeaders (queryResults.headers))
             wr.Write("\r\n")
-            writeCSVRowsRecursively wr (List.rev (queryResults.rows))
+            writeCSVRowsRecursively clientName wr (List.rev (queryResults.rows))
             wr.Close()
-            
+        
+        let rec internal generateCSVFilesRecursively (queryResults:queryResults list) path (clientName:Cell) queryCount = 
+
+            match queryResults with
+            |[] -> ()
+            |head::tail-> 
+                let fileName = (clientName.getData) + "_query_" + queryCount.ToString() + ".csv"
+                generateCSVFile head clientName path fileName
+                generateCSVFilesRecursively tail path clientName (queryCount + 1)
+        
+        let generateCSVFilesForClient queryResults (path:string) (clientName:string) = 
+            generateCSVFilesRecursively (List.rev queryResults) path (Cell(clientName)) 1
             
