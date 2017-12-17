@@ -9,12 +9,27 @@ open quickStats.CSVBuilder
 
 let getTime() =  ( System.DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss")) + " > " 
 
+let writeToConsole message = 
+    printfn "%s%s" (getTime()) message
+
 let runScriptAgainstSingleClient (clientName:String) (connectionString:string) outputPath= 
-    printfn "%srunning script against client %s" (getTime()) clientName
-    match executeScript clientName connectionString loadSQLScript with
-    | Some a -> 
-        generateCSVFilesForClient a outputPath clientName
-    | _ -> printfn "no results returned to process"
+    writeToConsole (sprintf "running script against client %s" clientName)
+    try
+        match executeScript clientName connectionString loadSQLScript with
+        | Some a -> 
+            generateCSVFilesForClient a outputPath clientName
+            writeToConsole (sprintf "output files generated in \"%s\"" outputPath)
+        | _ -> writeToConsole "no results returned to process"
+    with
+        e -> 
+             writeToConsole "failed with exception:"
+             Console.ForegroundColor <- ConsoleColor.DarkRed
+             writeToConsole (sprintf "%s" (e.ToString()) )
+             Console.ResetColor()
+             writeToConsole (sprintf "skipping client %s" clientName)
+             
+    
+    
 
 
 let runScriptAgainstAllClients path= 
@@ -28,5 +43,4 @@ let runScriptAgainstAllClients path=
 [<EntryPoint>]
 let main argv = 
     runScriptAgainstAllClients "c:\svn"
-
     0 // return an integer exit code
