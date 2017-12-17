@@ -28,24 +28,24 @@ type testQuickStats() =
     
     [<Fact>]
     let ``test executeScript with single select statement``() =
-        let queries =  executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test Select * from apples"""
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test Select * from apples"""
         Assert.Equal(1,(result queries))
 
     [<Fact>]
     let ``test executeScript with two select statements``() =
-        let queries =  executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript
         Assert.Equal(2,(result queries))
 
     [<Fact>]
     let ``test executeScript with two select statements, one of which returns not results``() =
-        let queries =  executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test Select * from apples Select * from Empty"""
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test Select * from apples Select * from Empty"""
 
 
         Assert.Equal(2,(result queries))
 
     [<Fact>]
     let ``test executeScript with no select statements``() =
-        let queries =  executeScript "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test"""
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test"""
         Assert.Equal(-1,(result queries))
     
     [<Fact>]
@@ -54,9 +54,9 @@ type testQuickStats() =
         let a = Cell("a")
         let b = Cell("b")
         let c = Cell("c")
-        let row = ResultRow([a; b; c])
-        let result = buildCSVrow row 
-        Assert.Equal("a,b,c",result)
+        let row = ResultRow([c; b; a])
+        let result = buildCSVrow (Cell("Emiliyan")) row 
+        Assert.Equal("Emiliyan,a,b,c",result)
     
     [<Fact>]
     let ``test building CSV row with comma and double quotes``() =
@@ -64,9 +64,9 @@ type testQuickStats() =
         let a = Cell("a\"")
         let b = Cell("b,b")
         let c = Cell("c")
-        let row = ResultRow([a; b; c])
-        let result = buildCSVrow row 
-        Assert.Equal("\"a\"\"\",\"b,b\",c",result)
+        let row = ResultRow([c; b; a])
+        let result = buildCSVrow (Cell("Emiliyan")) row 
+        Assert.Equal("Emiliyan,\"a\"\"\",\"b,b\",c",result)
 
     [<Fact>]
     let ``test building CSV row with all special characters``() =
@@ -74,9 +74,9 @@ type testQuickStats() =
         let b = Cell("b,b")
         let c = Cell("c\r")
         let d = Cell("d\n\",")
-        let row = ResultRow([a; b; c; d])
-        let result = buildCSVrow row 
-        Assert.Equal("\"a\"\"\",\"b,b\",\"c\r\",\"d\n\"\",\"",result)
+        let row = ResultRow([d; c; b; a])
+        let result = buildCSVrow (Cell("Emiliyan")) row 
+        Assert.Equal("Emiliyan,\"a\"\"\",\"b,b\",\"c\r\",\"d\n\"\",\"",result)
 
     [<Fact>]
     let ``test building CSV row with empty cells``() =
@@ -85,7 +85,7 @@ type testQuickStats() =
         let c = Cell("c")
         let row = ResultRow([a; b; c])
         let headers = QueryHeaders([a; a; a])
-        let result = buildCSVrow row 
+        let result = buildCSVrow (Cell("Emiliyan")) row 
         let headersResult = buildCSVrowHeaders headers
-        Assert.Equal(",,",headersResult)
+        Assert.Equal("client name,,,",headersResult)
         
