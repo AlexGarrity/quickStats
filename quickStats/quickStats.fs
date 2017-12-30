@@ -2,7 +2,6 @@
 
 
 open System.Configuration
-open FSharp.Configuration
     module SqlConn =
         
         open System.Data
@@ -130,12 +129,17 @@ open FSharp.Configuration
         open System.IO
 
         let loadSQLScript = 
-            File.ReadAllLines(AppSettings<"app.config">.SqlFilePathAndName)
+            File.ReadAllLines(ConfigurationManager.AppSettings.Get("sql file path and name"))
             |> (fun s -> 
                     String.concat "\n" s)
         
+
     module CSVBuilder =
         open SqlConn
+        
+        [<Literal>] 
+        let fileNamePattern = "_query_"
+
         let internal escapeSpecialCharacters (newCell:string) (strb:System.Text.StringBuilder) isFirstCell =
             let shouldBeQuoted = newCell.Contains(",") 
                                  || newCell.Contains("\r")
@@ -198,7 +202,7 @@ open FSharp.Configuration
             match queryResults with
             |[] -> ()
             |head::tail-> 
-                let fileName = (clientName.getData) + "_query_" + queryCount.ToString() + ".csv"
+                let fileName = (clientName.getData) + fileNamePattern + queryCount.ToString() + ".csv"
                 generateCSVFile head clientName path fileName
                 generateCSVFilesRecursively tail path clientName (queryCount + 1)
         
