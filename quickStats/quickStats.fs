@@ -125,15 +125,6 @@ open System.Configuration
                 conn |> Seq.iter (fun s-> printfn "%s" (s.ToString()) )   
             
 
-    module Files = 
-        open System.IO
-
-        let loadSQLScript = 
-            File.ReadAllLines(ConfigurationManager.AppSettings.Get("sql file path and name"))
-            |> (fun s -> 
-                    String.concat "\n" s)
-        
-
     module CSVBuilder =
         open SqlConn
         
@@ -208,4 +199,54 @@ open System.Configuration
         
         let generateCSVFilesForClient queryResults (path:string) (clientName:string) = 
             generateCSVFilesRecursively (List.rev queryResults) path (Cell(clientName)) 1
+
+    module Files = 
+        open System.IO
+
+        let loadSQLScript = 
+            File.ReadAllLines(ConfigurationManager.AppSettings.Get("sql file path and name"))
+            |> (fun s -> 
+                    String.concat "\n" s)
+        
+        let getAllCSVFiles path = 
+            Directory.GetFiles(path, "*" + CSVBuilder.fileNamePattern + "*.csv")
+        
+        let groupCSVFileNames (files:string []) = 
             
+            let filesToList = files |> Array.toList
+            
+            match filesToList with
+            | [] -> []
+            | fls ->
+                fls
+                |> List.groupBy (
+                    fun f -> 
+                        let startIndex = f.LastIndexOf("_query_") 
+                                         + "_query_".Length
+                        let endIndex = f.LastIndexOf(".csv")
+                        f.Substring(startIndex, (endIndex - startIndex) ) |> int
+                    )
+        
+        
+        let internal combineCSVFiles path (fileGroups:(int * string list) list) = 
+            
+            fileGroups
+            |> List.iter (
+                fun f -> 
+                    let combinedFileName = path + "\\resultsForQuery_" + ((fst f).ToString()) + ".csv"
+                    snd f
+                    |> List.iter ( 
+                        fun filePathAndName -> 
+                            let fileLines = File.ReadAllLines(filePathAndName)
+                            match File.Exists(combinedFileName) with
+                            | false -> File.WriteAllLines(combinedFileName, fileLines)
+                            | true -> File.AppendAllLines(combinedFileName, fileLines.[1..])
+                         
+                       )
+                )
+                    
+        let combineAllCSVFiles path =           
+           getAllCSVFiles path
+           |> groupCSVFileNames
+           |> combineCSVFiles path
+

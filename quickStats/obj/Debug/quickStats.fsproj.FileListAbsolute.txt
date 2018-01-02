@@ -1,0 +1,9 @@
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\quickStats.exe.config
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\quickStats.XML
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\quickStats.exe
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\quickStats.pdb
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\FSharp.Core.dll
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\System.ValueTuple.dll
+c:\svn\quickStats1\quickStats\quickStats\bin\Debug\FSharp.Core.xml
+c:\svn\quickStats1\quickStats\quickStats\obj\Debug\quickStats.exe
+c:\svn\quickStats1\quickStats\quickStats\obj\Debug\quickStats.pdb

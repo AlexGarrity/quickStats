@@ -43,5 +43,7 @@ let runScriptAgainstAllClients path=
 
 [<EntryPoint>]
 let main argv = 
-    runScriptAgainstAllClients "c:\svn" |> ignore
+    //runScriptAgainstAllClients "c:\svn" |> ignore
+    combineAllCSVFiles "c:\svn"
+    //printfn "%A" (getAllCSVFiles "c:\svn")
     0 // return an integer exit code
