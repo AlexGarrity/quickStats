@@ -28,6 +28,12 @@ open System.Configuration
                 match this with
                 | QueryHeaders q -> q
         
+        type SQLScript = 
+            |SQLScript of string
+            member this.getScript = 
+                match this with 
+                |SQLScript q -> q
+
         type queryResults = {clientName:string; headers:QueryHeaders; rows:ResultRow list}
         
         
@@ -100,11 +106,11 @@ open System.Configuration
         ///<param name="connectionString">The connection string which will be used</param>
         ///<param name="str">the sql script which will be executed using the specified connection string</param>
         ///<returns>Sequence of linked lists</returns>
-        let executeScript clientName connectionString str = 
+        let executeScript clientName connectionString (str:SQLScript) = 
             let sqlConnection = new SqlConnection(connectionString);
             
             let cmd = new SqlCommand();
-            cmd.CommandText <- str         
+            cmd.CommandText <- str.getScript        
             cmd.CommandType <- CommandType.Text
             cmd.Connection <- sqlConnection
             cmd.CommandTimeout <- 300
@@ -203,8 +209,8 @@ open System.Configuration
     module Files = 
         open System.IO
 
-        let loadSQLScript = 
-            File.ReadAllLines(ConfigurationManager.AppSettings.Get("sql file path and name"))
+        let loadSQLScript sqlScript = 
+            File.ReadAllLines(sqlScript)
             |> (fun s -> 
                     String.concat "\n" s)
         

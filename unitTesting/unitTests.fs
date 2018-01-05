@@ -25,28 +25,28 @@ type testQuickStats() =
                              """union all Select 2 as id, 'no' as 'answer' ) as d ) Select a1.id, count(*) as [countOfRows] from apples a1 """+
                              """inner join apples a2 on a1.id = a2.id left join cte_yesNo yn on yn.id = a2.id where a1.color = @color group by a1.id having count(*) = 1 """+
                              """select * from apples"""
-        Assert.Equal(expectedString, Files.loadSQLScript)
+        Assert.Equal(expectedString, Files.loadSQLScript "C:\svn\test.sql")
     
     [<Fact>]
     let ``test executeScript with single select statement``() =
-        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test Select * from apples"""
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" (SQLScript("""Use Test Select * from apples"""))
         Assert.Equal(1,(result queries))
 
     [<Fact>]
     let ``test executeScript with two select statements``() =
-        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" loadSQLScript
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" (SQLScript(loadSQLScript "C:\svn\test.sql"))
         Assert.Equal(2,(result queries))
 
     [<Fact>]
     let ``test executeScript with two select statements, one of which returns not results``() =
-        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test Select * from apples Select * from Empty"""
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" (SQLScript("""Use Test Select * from apples Select * from Empty"""))
 
 
         Assert.Equal(2,(result queries))
 
     [<Fact>]
     let ``test executeScript with no select statements``() =
-        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" """Use Test"""
+        let queries =  executeScript "Emiliyan" "Server=EMILIYAN;Database=test;Integrated Security=true" (SQLScript("""Use Test"""))
         Assert.Equal(-1,(result queries))
     
     [<Fact>]

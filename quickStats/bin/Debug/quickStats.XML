@@ -7,7 +7,7 @@
 Output query results to a CSV file
 </summary>
 </member>
-<member name="M:quickStats.SqlConn.executeScript(System.String,System.String,System.String)">
+<member name="M:quickStats.SqlConn.executeScript(System.String,System.String,quickStats.SqlConn.SQLScript)">
 <summary>Execute a sql script and return results as list of linked lists</summary>
 <param name="connectionString">The connection string which will be used</param>
 <param name="str">the sql script which will be executed using the specified connection string</param>
