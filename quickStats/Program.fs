@@ -50,7 +50,7 @@ let main argv =
     | Some path, Some script -> 
         
         runScriptAgainstAllClients path script |> ignore
-        printfn "Merging all CSV files"
+        printfn "Merging all CSV files producing a single CSV file per query"
         combineAllCSVFiles path
 
     | _, _ -> 
