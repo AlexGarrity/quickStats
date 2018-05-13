@@ -36,7 +36,7 @@ module sqlValidator =
     
 
     let rec private findBlockCommentEnd (sqlString:char list) =
-        printfn "%A" sqlString
+        
         match sqlString with
         | [] -> []
         | '*'::tail -> 
@@ -47,7 +47,7 @@ module sqlValidator =
 
 
     let rec findLineCommentEnd (sqlString:char list) =
-        printfn "%A" sqlString
+        
         match sqlString with
         | [] -> []
         | '\n'::tail -> tail

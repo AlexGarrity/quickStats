@@ -9,8 +9,6 @@ module SqlConn =
     open System.Data.SqlClient
     open System.Collections.Generic
     
-    
-
     type Cell = 
         |Cell of string
         member this.getData = 
@@ -96,6 +94,7 @@ module SqlConn =
         cmd.CommandType <- CommandType.Text
         cmd.Connection <- sqlConnection
         cmd.CommandTimeout <- 300
+        
         sqlConnection.Open()
         let reader = cmd.ExecuteReader()
 
