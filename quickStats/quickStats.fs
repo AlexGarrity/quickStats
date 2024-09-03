@@ -1,10 +1,13 @@
 ﻿namespace quickStats
 
+open Newtonsoft.Json
 
-open System.Configuration
+type Config =
+    {
+        ConnectionStrings: Map<string, string>
+    }
 
 module SqlConn =
-    
     open System.Data
     open System.Data.SqlClient
     open System.Collections.Generic
@@ -38,13 +41,9 @@ module SqlConn =
     
     ///<summary>load all connections from app.config</summary>
     ///<returns>Sequence of all connections listed in the app.config</returns>
-    let getConnections = 
-        lazy
-            seq { for conn in ConfigurationManager.ConnectionStrings -> 
-                    match conn.ConnectionString with
-                    | "" -> None
-                    | x -> Some conn}
-            |> Seq.choose id         
+    let getConfig configPath = 
+        let fileData = System.IO.File.ReadAllText configPath
+        JsonConvert.DeserializeObject<Config> fileData
 
     let rec getQueryHeaders headers (reader:SqlDataReader) i = 
         match i>=0 && reader.FieldCount > i with 
@@ -106,10 +105,9 @@ module SqlConn =
         sqlConnection.Close()
         queries
 
-    let printConnections = 
-        lazy
-            let conn = getConnections.Value
-            conn |> Seq.iter (fun s-> printfn "%s" (s.ToString()) )   
+    let printConnections config = 
+        config.ConnectionStrings
+        |> Map.iter (fun k v -> printfn "%s: %s" k v)
         
 
 module CSVBuilder =

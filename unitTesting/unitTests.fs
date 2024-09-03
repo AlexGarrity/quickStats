@@ -1,11 +1,11 @@
 ﻿namespace unitTests
 
 open quickStats
-open System
-open Xunit
 open quickStats.SqlConn
 open quickStats.Files
 open quickStats.CSVBuilder
+open System
+open Xunit
 
 
 type testQuickStats() =
@@ -15,7 +15,8 @@ type testQuickStats() =
             | None -> -1
     [<Fact>]
     let ``when generating query without params should generate empty query``() =
-        let conns = quickStats.SqlConn.getConnections.Value
+        let config = quickStats.SqlConn.getConfig ()
+        let conns = Map.toSeq config.ConnectionStrings
         let length  =  Seq.length (conns)
         Assert.Equal(3, length)
 
@@ -121,7 +122,3 @@ type testQuickStats() =
 
         if expectedResult.Length <> groups.Length then Assert.True(false, "the length should be the same")
         else compareLists expectedResult groups
-
-
-            
-

@@ -18,15 +18,25 @@ module Regex =
         if String.Compare("--outputPath", arg, StringComparison.OrdinalIgnoreCase) = 0
         then Some() else None
 
-
-    let (|ValidPath|_|) arg = 
+    let (|ValidOutputPath|_|) arg = 
         match arg with
         | ParseRegex outputPath s -> Some s
+        | _ -> None
+
+    let (|ValidConfigPath|_|) arg =
+        match System.IO.File.Exists arg with
+        | true -> Some arg
         | _ -> None
     
     let (|PathToSQLScript|_|) arg = 
         if String.Compare("--pathToSQLScript", arg, StringComparison.OrdinalIgnoreCase) = 0
         then Some() else None
+
+    let (|PathToConfig|_|) arg =
+        if String.Compare("--config", arg, StringComparison.OrdinalIgnoreCase) = 0 then
+            Some()
+        else
+            None
 
     let (|ValidPathToSQLFile|_|) arg = 
         match arg with
@@ -37,14 +47,24 @@ module Regex =
 module ParseCommandLineArgs = 
     open Regex
   
-    type CommandLineOptions = {pathToSQLScript: string option; outputPath: string option}
+    type CommandLineOptions = {configPath: string option; pathToSQLScript: string option; outputPath: string option}
 
-    let defaultOptions = {pathToSQLScript = None; outputPath = None}
+    let defaultOptions = {configPath = None; pathToSQLScript = None; outputPath = None}
     
     let rec internal parseCommandLine optionsSoFar args  = 
         match args with 
         // empty list means we're done.
         | [] -> optionsSoFar  
+
+        // Match --config
+        | PathToConfig::xs ->
+            match xs with
+            | ValidConfigPath x :: xss ->
+                let newOptionsSoFar = { optionsSoFar with configPath = Some x }
+                parseCommandLine newOptionsSoFar xss
+            | _ ->
+                eprintfn "The config parameter must be followed by a valid filepath"
+                parseCommandLine optionsSoFar xs
 
         // match --pathToSQLScript flag
         | PathToSQLScript::xs -> 
@@ -59,7 +79,7 @@ module ParseCommandLineArgs =
         // match --outputPath flag
         | OutputPath::xs -> 
             match xs with
-            | ValidPath x ::xss ->
+            | ValidOutputPath x ::xss ->
                 let newOptionsSoFar = { optionsSoFar with outputPath=Some x}
                 parseCommandLine newOptionsSoFar xss  
             | _ ->
@@ -68,7 +88,7 @@ module ParseCommandLineArgs =
         
         // handle unrecognized option and keep looping
         | x::xs -> 
-            eprintfn "Option '%s' is not recognized" x
+            failwithf "Option '%s' is not recognized" x
             parseCommandLine optionsSoFar xs  
     
     let parseCommandLineArguments args =

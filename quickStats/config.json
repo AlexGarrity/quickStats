@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "Kakarot": "Server=Kakarot\\Live;initial catalog=Kakarot_LIVE_CarePath_Provider;User Id=db_access;Password=9$ygtEm3x%Pm.W~;Min Pool Size=63;Max Pool Size=255;"
+  }
+}

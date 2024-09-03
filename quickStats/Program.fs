@@ -32,31 +32,31 @@ let runScriptAgainstSingleClient (clientName:String) (connectionString:string) o
     }
     
      
-let runScriptAgainstAllClients path script= 
-    let conns = getConnections
-    let sqlScript = SQLScript(loadSQLScript script)
-    conns.Value 
-    |> Seq.map (fun c -> runScriptAgainstSingleClient (c.Name) (c.ConnectionString) path sqlScript)
+let runScriptAgainstAllClients configPath outputPath scriptPath = 
+    let config = getConfig configPath
+    let sqlScript = SQLScript(loadSQLScript scriptPath)
+    config.ConnectionStrings 
+    |> Map.toSeq
+    |> Seq.map (fun (name, connectionString) -> runScriptAgainstSingleClient (name) (connectionString) outputPath sqlScript)
     |> Async.Parallel  
     |> Async.RunSynchronously
     
-
 
 [<EntryPoint>]
 let main argv = 
     let arguments = parseCommandLineArguments <| Array.toList argv
     
-    match arguments.outputPath, arguments.pathToSQLScript with
-    | Some path, Some script -> 
-        
-        runScriptAgainstAllClients path script |> ignore
+    match arguments.configPath, arguments.outputPath, arguments.pathToSQLScript with
+    | Some configPath, Some outputPath, Some scriptPath -> 
+        runScriptAgainstAllClients configPath outputPath scriptPath |> ignore
         printfn "Merging all CSV files producing a single CSV file per query"
-        combineAllCSVFiles path
+        combineAllCSVFiles outputPath
 
-    | _, _ -> 
-        "expected usage:" +
-        "\n--outputPath <existing path where all CSV files will be generated>" + 
-        "\n--pathToSQLScript <path to SQL file>"
+    | _ -> 
+        "expected usage:
+--config <path to config.json file>
+--outputPath <existing path where all CSV files will be generated>
+--pathToSQLScript <path to SQL file>"
         |> printfn "%s"
                 
     0 // return an integer exit code

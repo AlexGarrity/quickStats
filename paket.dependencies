@@ -1,0 +1,8 @@
+source https://api.nuget.org/v3/index.json
+framework: net8.0
+storage: none
+
+nuget FSharp.Core
+nuget Newtonsoft.Json
+nuget System.Data.SqlClient
+nuget xunit
