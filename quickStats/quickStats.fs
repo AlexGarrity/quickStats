@@ -154,7 +154,7 @@ module CSVBuilder =
     
     let buildCSVrowHeaders (headers:QueryHeaders) = 
         let strb = System.Text.StringBuilder()
-        buildCSVRowRecursively (Cell("client name")::(List.rev headers.getQueryHeaders)) strb true |> ignore
+        buildCSVRowRecursively (Cell("Client Name")::(List.rev headers.getQueryHeaders)) strb true |> ignore
         strb.ToString()
 
     let rec internal writeCSVRowsRecursively clientName (wr:System.IO.StreamWriter) (rows:ResultRow list)=

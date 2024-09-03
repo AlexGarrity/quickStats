@@ -13,14 +13,14 @@ let getTime() =  ( System.DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss")) + " > "
 let writeToConsole message = 
     printfn "%s%s" (getTime()) message
 
-let runScriptAgainstSingleClient (clientName:String) (connectionString:string) outputPath sqlScript= 
+let runScriptAgainstSingleClient clientName connectionString outputPath sqlScript = 
     async{
-        writeToConsole (sprintf "running script against client %s" clientName)
+        writeToConsole (sprintf "Running script against client %s" clientName)
         try
             match executeScript clientName connectionString sqlScript with
             | Some a -> 
                 generateCSVFilesForClient a outputPath clientName
-                writeToConsole (sprintf "output files for client %s generated in \"%s\"" clientName outputPath)
+                writeToConsole (sprintf "Output files for client %s generated in \"%s\"" clientName outputPath)
             | _ -> writeToConsole (sprintf "The query was ran successfully against client %s but no results were returned to process" clientName)
         with
             e -> 
@@ -28,7 +28,7 @@ let runScriptAgainstSingleClient (clientName:String) (connectionString:string) o
                  Console.ForegroundColor <- ConsoleColor.DarkRed
                  writeToConsole (sprintf "%s" (e.ToString()) )
                  Console.ResetColor()
-                 writeToConsole (sprintf "skipping client %s" clientName)  
+                 writeToConsole (sprintf "Skipping client %s" clientName)  
     }
     
      
@@ -53,10 +53,19 @@ let main argv =
         combineAllCSVFiles outputPath
 
     | _ -> 
-        "expected usage:
---config <path to config.json file>
---outputPath <existing path where all CSV files will be generated>
---pathToSQLScript <path to SQL file>"
+        "Expected usage:
+    quickStats.exe [options]
+
+Available options:
+    --config <path>
+    [Required] The path to a config.json containing the connection strings
+
+    --outputPath <path>
+    [Required] The path to a directory where the output files will be saved to
+
+    --pathToSQLScript <path>
+    [Required] The path to a file containing the SQL script to be run across the given server instances
+"
         |> printfn "%s"
                 
     0 // return an integer exit code

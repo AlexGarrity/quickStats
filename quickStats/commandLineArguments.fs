@@ -63,7 +63,7 @@ module ParseCommandLineArgs =
                 let newOptionsSoFar = { optionsSoFar with configPath = Some x }
                 parseCommandLine newOptionsSoFar xss
             | _ ->
-                eprintfn "The config parameter must be followed by a valid filepath"
+                eprintfn "--pathToSQLScript must be followed by a valid path to a config file"
                 parseCommandLine optionsSoFar xs
 
         // match --pathToSQLScript flag
@@ -73,7 +73,7 @@ module ParseCommandLineArgs =
                 let newOptionsSoFar = { optionsSoFar with pathToSQLScript=Some x}
                 parseCommandLine newOptionsSoFar xss  
             | _ ->
-                eprintfn "--pathToSQLScript needs a second argument or the provided argument is not valid" 
+                eprintfn "--pathToSQLScript must be followed by a valid path to a file containing a SQL script" 
                 parseCommandLine optionsSoFar xs  
 
         // match --outputPath flag
@@ -83,7 +83,7 @@ module ParseCommandLineArgs =
                 let newOptionsSoFar = { optionsSoFar with outputPath=Some x}
                 parseCommandLine newOptionsSoFar xss  
             | _ ->
-                eprintfn "--outputPath needs a second argument  or the provided argument is not valid"
+                eprintfn "--outputPath must be followed by a valid path to a directory"
                 parseCommandLine optionsSoFar xs  
         
         // handle unrecognized option and keep looping

@@ -1,8 +1,7 @@
 {
   "profiles": {
     "quickStats": {
-      "commandName": "Project",
-      "commandLineArgs": "--config \"C:\\Users\\AlexanderGarrity\\Development\\quickStats\\quickStats\\config.json\"\r\n--outputPath \"C:\\Users\\AlexanderGarrity\\Documents\\Output\"\r\n--pathToSqlScript \"C:\\Users\\AlexanderGarrity\\Documents\\SQL Server Management Studio\\Latest Errors.sql\""
+      "commandName": "Project"
     }
   }
 }
