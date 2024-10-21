@@ -63,7 +63,7 @@ module ParseCommandLineArgs =
                 let newOptionsSoFar = { optionsSoFar with configPath = Some x }
                 parseCommandLine newOptionsSoFar xss
             | _ ->
-                eprintfn "--pathToSQLScript must be followed by a valid path to a config file"
+                eprintfn "--config must be followed by a valid path to a config file"
                 parseCommandLine optionsSoFar xs
 
         // match --pathToSQLScript flag
