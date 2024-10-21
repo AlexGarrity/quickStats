@@ -3,29 +3,30 @@
 module Regex = 
     open System.Text.RegularExpressions
     open System
-
-    [<Literal>] 
-    let pathToSQLScript = "^(?:[\\w]\\:|\\\\)(\\\\[a-zA-Z_\\-\\s0-9\\.\\$]+)+\\.(sql)$"
-    [<Literal>] 
-    let outputPath = "^(?:[\\w]\\:|\\\\)(\\\\[a-zA-Z_\\-\\s0-9\\.\\$]+)+$"
-
-    let (|ParseRegex|_|) regex str =
-        let m = Regex(regex).Match(str)
-        if m.Success then Some str
-        else None
-    
+   
     let (|OutputPath|_|) arg = 
         if String.Compare("--outputPath", arg, StringComparison.OrdinalIgnoreCase) = 0
         then Some() else None
 
     let (|ValidOutputPath|_|) arg = 
-        match arg with
-        | ParseRegex outputPath s -> Some s
+        match IO.Directory.Exists arg with
+        | true -> Some arg
+        | _ -> None
+
+    let (|ValidPathToSQLFile|_|) arg =
+        match IO.File.Exists arg with
+        | true -> 
+            match IO.Path.GetExtension arg with
+            | ".sql" -> Some arg
+            | _ -> None
         | _ -> None
 
     let (|ValidConfigPath|_|) arg =
-        match System.IO.File.Exists arg with
-        | true -> Some arg
+        match IO.File.Exists arg with
+        | true ->
+            match IO.Path.GetExtension arg with
+            | ".json" -> Some arg
+            | _ -> None
         | _ -> None
     
     let (|PathToSQLScript|_|) arg = 
@@ -37,11 +38,6 @@ module Regex =
             Some()
         else
             None
-
-    let (|ValidPathToSQLFile|_|) arg = 
-        match arg with
-        | ParseRegex pathToSQLScript s -> Some s
-        | _ -> None
     
     
 module ParseCommandLineArgs = 
